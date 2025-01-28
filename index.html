@@ -1,120 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Delightful Notes</title>
-		<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-		<link href="styles.css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="container">
-			<h1 class="title">Delightful Notes</h1>
-			<hr class="divider">
-			<div id="notes-container" class="notes-container">
-				<div id="notes-list" class="notes-list"></div>
-			</div>
-			<button id="write-btn" class="write-btn" aria-label="Write Note">✍️</button>
-			<div id="write-modal" class="write-modal">
-				<div class="modal-content">
-					<h2 class="modal-title">New Note</h2>
-					<textarea id="note-input" class="note-input" rows="5" placeholder="Nothing but creativity"></textarea>
-					<div class="modal-footer">
-						<div class="visibility-toggle">
-							<input type="checkbox" id="visibility-checkbox" checked/>
-							<label for="visibility-checkbox">Visible</label>
-						</div>
-						<button id="save-btn" class="save-btn">Save Note</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<script type="module">
-			import{initializeApp} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js";
-			import{getFirestore, collection, addDoc, getDocs, query, where, orderBy,} from "https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore.js";
-			const firebaseConfig=
-			{
-				apiKey: "AIzaSyBIsQtSpCCA1QDks8K6WpDe1jXppMtwVOs",
-				authDomain: "notes-81643.firebaseapp.com",
-				projectId: "notes-81643",
-				storageBucket: "notes-81643.appspot.com",
-				messagingSenderId: "896217476176",
-				appId: "1:896217476176:web:02bb0d8fe5dae50519f555",
-				measurementId: "G-PVHEPSRWML",
-			};
-			const app=initializeApp(firebaseConfig);
-			const db=getFirestore(app);
-			const writeBtn=document.getElementById("write-btn");
-			const writeModal=document.getElementById("write-modal");
-			const noteInput=document.getElementById("note-input");
-			const saveBtn=document.getElementById("save-btn");
-			const visibilityCheckbox=document.getElementById("visibility-checkbox");
-			const notesList=document.getElementById("notes-list");
-			writeBtn.addEventListener("click", ()=>
-				{
-					writeModal.classList.add("show");
-				});
-			document.addEventListener("click", (e)=>
-				{
-					if(e.target!==writeModal && e.target!==writeBtn && !writeModal.contains(e.target))
-					{
-						writeModal.classList.remove("show");
-					}
-				});
-			saveBtn.addEventListener("click", async()=>
-				{
-					const noteContent=noteInput.value.trim();
-					if(noteContent==="Not Visible")
-					{
-						await loadNotes(true);
-					}
-					else if(noteContent!=="")
-					{
-						const isVisible=visibilityCheckbox.checked?"visible":"hidden";
-						await addDoc(collection(db, "notes"),
-							     {
-								     content: noteContent, visibility: isVisible, date: formatDate(new Date()), timestamp: new Date(),
-							     });
-						await loadNotes(false);
-					}
-					noteInput.value="";
-					visibilityCheckbox.checked=true;
-					writeModal.classList.remove("show");
-				});
-			function formatDate(date)
-			{
-				const day=date.getDate();
-				const month=date.getMonth()+1;
-				const year=date.getFullYear();
-				const hours=date.getHours();
-				const minutes=date.getMinutes().toString().padStart(2, "0");
-				const ampm=hours>=12?"p.m.":"a.m.";
-				const hours12=hours%12 || 12;
-				return `${day}.${month}.${year} ${hours12}:${minutes} ${ampm}`;
-			}
-			const loadNotes=async(showHidden=false)=>
-				{
-					let notesQuery;
-					if(showHidden)
-					{
-						notesQuery=query(collection(db, "notes"), orderBy("timestamp", "desc"));
-					}
-					else
-					{
-						notesQuery=query(collection(db, "notes"), where("visibility", "==", "visible"), orderBy("timestamp", "desc"));
-					}
-					const querySnapshot=await getDocs(notesQuery);
-					notesList.innerHTML="";
-					querySnapshot.forEach((doc)=>
-						{
-							const data=doc.data();
-							const noteElement=document.createElement("div");
-							noteElement.classList.add("note");
-							noteElement.innerHTML=`<p style="font-weight: 500;">${data.content}</p><p style="float: right;">${data.date}</p><br>`;
-							notesList.appendChild(noteElement);
-						});
-				};
-			loadNotes(false);
-		</script>
-	</body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delightful Notes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Delightful Notes</h1>
+        <hr class="divider">
+        <div id="notes-container" class="notes-container">
+            <div id="notes-list" class="notes-list"></div>
+        </div>
+        <button id="write-btn" class="write-btn" aria-label="Write Note">✒️</button>
+        <div id="write-modal" class="write-modal">
+            <div class="modal-content">
+                <h2 class="modal-title">New Note</h2>
+                <textarea id="note-input" class="note-input" rows="5" placeholder="Nothing but creativity"></textarea>
+                <div class="modal-footer">
+                    <div class="visibility-toggle">
+                        <input type="checkbox" id="visibility-checkbox" checked />
+                        <label for="visibility-checkbox">Visible</label>
+                    </div>
+                    <button id="save-btn" class="save-btn">Save Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module">
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    deleteDoc,
+    doc,
+    getDoc,
+    updateDoc // Add this
+} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+
+
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBr3FoWPpLMz1nEnq2BkspIF8eG6bzoO48",
+    authDomain: "satyam-cf7ff.firebaseapp.com",
+    projectId: "satyam-cf7ff",
+    storageBucket: "satyam-cf7ff.firebasestorage.app",
+    messagingSenderId: "801602187056",
+    appId: "1:801602187056:web:95ba0e1cbe9333c5f022f5",
+    measurementId: "G-VXKXP6RSPX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const writeBtn = document.getElementById("write-btn");
+        const writeModal = document.getElementById("write-modal");
+        const noteInput = document.getElementById("note-input");
+        const saveBtn = document.getElementById("save-btn");
+        const visibilityCheckbox = document.getElementById("visibility-checkbox");
+        const notesList = document.getElementById("notes-list");
+
+        let editMode = false;
+        let editDocId = null;
+
+        writeBtn.addEventListener("click", () => {
+            writeModal.classList.add("show");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (e.target !== writeModal && e.target !== writeBtn && !writeModal.contains(e.target)) {
+                writeModal.classList.remove("show");
+                editMode = false;
+                editDocId = null;
+                noteInput.value = "";
+            }
+        });
+
+saveBtn.addEventListener("click", async () => {
+    const noteContent = noteInput.value.trim();
+    if (noteContent !== "") {
+        const isVisible = visibilityCheckbox.checked ? "visible" : "hidden";
+        if (editMode) {
+            // Update the existing note
+            const docRef = doc(db, "notes", editDocId); // Get reference to the document
+            await updateDoc(docRef, {
+                content: noteContent,
+                visibility: isVisible,
+                date: formatDate(new Date()), // Update the date
+                timestamp: new Date(), // Update the timestamp
+            });
+            editMode = false; // Reset edit mode
+            editDocId = null; // Clear the edit document ID
+        } else {
+            // Add a new note
+            await addDoc(collection(db, "notes"), {
+                content: noteContent,
+                visibility: isVisible,
+                date: formatDate(new Date()),
+                timestamp: new Date(),
+            });
+        }
+        await loadNotes(); // Reload notes after save
+        noteInput.value = ""; // Clear input field
+        visibilityCheckbox.checked = true; // Reset visibility checkbox
+        writeModal.classList.remove("show"); // Close modal
+    }
+});
+
+async function loadNotes() {
+    const notesQuery = query(
+        collection(db, "notes"),
+        orderBy("timestamp", "desc")
+    );
+    const querySnapshot = await getDocs(notesQuery);
+    notesList.innerHTML = "";
+
+    querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const noteElement = document.createElement("div");
+        noteElement.classList.add("note");
+        noteElement.innerHTML = `
+            <div class="note-header">
+                <span class="edit-icon" data-id="${doc.id}">✏️</span>
+                <span class="delete-icon" data-id="${doc.id}">🗑️</span>
+            </div>
+            <p style="font-weight: 500;">${data.content}</p>
+            <p class="note-time" style="float: right;">${data.date}</p>
+        `;
+        notesList.appendChild(noteElement);
+    });
+
+const editIcons = document.querySelectorAll(".edit-icon");
+    editIcons.forEach((icon) =>
+        icon.addEventListener("click", async (e) => {
+            const docId = e.target.getAttribute("data-id");
+            const docRef = doc(db, "notes", docId); // Get document reference
+            const docSnap = await getDoc(docRef); // Correctly fetch document data
+            if (docSnap.exists()) {
+                const noteData = docSnap.data();
+                noteInput.value = noteData.content;
+                visibilityCheckbox.checked = noteData.visibility === "visible";
+                editMode = true;
+                editDocId = docId;
+                writeModal.classList.add("show");
+            } else {
+                console.error("No such document!");
+            }
+        })
+    );
+
+const deleteIcons = document.querySelectorAll(".delete-icon");
+    deleteIcons.forEach((icon) =>
+        icon.addEventListener("click", async (e) => {
+            const docId = e.target.getAttribute("data-id");
+            await deleteDoc(doc(db, "notes", docId));
+            await loadNotes();
+        })
+    );
+}
+notesList.addEventListener("click", (e) => {
+    const note = e.target.closest(".note");
+    if (note) {
+        const noteHeader = note.querySelector(".note-header");
+        noteHeader.style.display = noteHeader.style.display === "flex" ? "none" : "flex";
+    }
+});
+
+document.addEventListener("click", (e) => {
+    if (!e.target.closest(".note")) {
+        document.querySelectorAll(".note-header").forEach((header) => {
+            header.style.display = "none";
+        });
+    }
+});
+        function formatDate(date) {
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+            const hours = date.getHours();
+            const minutes = date.getMinutes().toString().padStart(2, "0");
+            const ampm = hours >= 12 ? "p.m." : "a.m.";
+            const hours12 = hours % 12 || 12;
+            return `${day}.${month}.${year} ${hours12}:${minutes} ${ampm}`;
+        }
+
+        loadNotes();
+    </script>
+</body>
 </html>
