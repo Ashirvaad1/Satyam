@@ -30,24 +30,20 @@
         </div>
     </div>
     <script type="module">
-import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs,
-    query,
-    where,
-    orderBy,
-    deleteDoc,
-    doc,
-    getDoc,
-    updateDoc // Add this
-} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-
-
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            query,
+            where,
+            orderBy,
+            deleteDoc,
+            doc,
+            getDoc,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBr3FoWPpLMz1nEnq2BkspIF8eG6bzoO48",
@@ -85,103 +81,128 @@ import {
             }
         });
 
-saveBtn.addEventListener("click", async () => {
-    const noteContent = noteInput.value.trim();
-    if (noteContent !== "") {
-        const isVisible = visibilityCheckbox.checked ? "visible" : "hidden";
-        if (editMode) {
-            // Update the existing note
-            const docRef = doc(db, "notes", editDocId); // Get reference to the document
-            await updateDoc(docRef, {
-                content: noteContent,
-                visibility: isVisible,
-                date: formatDate(new Date()), // Update the date
-                timestamp: new Date(), // Update the timestamp
-            });
-            editMode = false; // Reset edit mode
-            editDocId = null; // Clear the edit document ID
-        } else {
-            // Add a new note
-            await addDoc(collection(db, "notes"), {
-                content: noteContent,
-                visibility: isVisible,
-                date: formatDate(new Date()),
-                timestamp: new Date(),
-            });
-        }
-        await loadNotes(); // Reload notes after save
-        noteInput.value = ""; // Clear input field
-        visibilityCheckbox.checked = true; // Reset visibility checkbox
-        writeModal.classList.remove("show"); // Close modal
-    }
-});
+        saveBtn.addEventListener("click", async () => {
+            const noteContent = noteInput.value.trim();
+            let showInvisible = false;
 
-async function loadNotes() {
-    const notesQuery = query(
-        collection(db, "notes"),
-        orderBy("timestamp", "desc")
-    );
-    const querySnapshot = await getDocs(notesQuery);
-    notesList.innerHTML = "";
-
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        const noteElement = document.createElement("div");
-        noteElement.classList.add("note");
-        noteElement.innerHTML = `
-            <div class="note-header">
-                <span class="edit-icon" data-id="${doc.id}">✏️</span>
-                <span class="delete-icon" data-id="${doc.id}">🗑️</span>
-            </div>
-            <p style="font-weight: 500;">${data.content}</p>
-            <p class="note-time" style="float: right;">${data.date}</p>
-        `;
-        notesList.appendChild(noteElement);
-    });
-
-const editIcons = document.querySelectorAll(".edit-icon");
-    editIcons.forEach((icon) =>
-        icon.addEventListener("click", async (e) => {
-            const docId = e.target.getAttribute("data-id");
-            const docRef = doc(db, "notes", docId); // Get document reference
-            const docSnap = await getDoc(docRef); // Correctly fetch document data
-            if (docSnap.exists()) {
-                const noteData = docSnap.data();
-                noteInput.value = noteData.content;
-                visibilityCheckbox.checked = noteData.visibility === "visible";
-                editMode = true;
-                editDocId = docId;
-                writeModal.classList.add("show");
-            } else {
-                console.error("No such document!");
+            if (noteContent === "Not Visible") {
+                showInvisible = true; // Show all notes when "Life" is entered
             }
-        })
-    );
 
-const deleteIcons = document.querySelectorAll(".delete-icon");
-    deleteIcons.forEach((icon) =>
-        icon.addEventListener("click", async (e) => {
-            const docId = e.target.getAttribute("data-id");
-            await deleteDoc(doc(db, "notes", docId));
-            await loadNotes();
-        })
-    );
-}
-notesList.addEventListener("click", (e) => {
-    const note = e.target.closest(".note");
-    if (note) {
-        const noteHeader = note.querySelector(".note-header");
-        noteHeader.style.display = noteHeader.style.display === "flex" ? "none" : "flex";
-    }
-});
+            if (noteContent !== "") {
+                const isVisible = visibilityCheckbox.checked ? "visible" : "hidden";
 
-document.addEventListener("click", (e) => {
-    if (!e.target.closest(".note")) {
-        document.querySelectorAll(".note-header").forEach((header) => {
-            header.style.display = "none";
+                if (editMode) {
+                    // Update the existing note
+                    const docRef = doc(db, "notes", editDocId); // Get reference to the document
+                    await updateDoc(docRef, {
+                        content: noteContent,
+                        visibility: isVisible,
+                        date: formatDate(new Date()), // Update the date
+                        timestamp: new Date(), // Update the timestamp
+                    });
+                    editMode = false; // Reset edit mode
+                    editDocId = null; // Clear the edit document ID
+                } else {
+                    await addDoc(collection(db, "notes"), {
+                        content: noteContent,
+                        visibility: isVisible,
+                        date: formatDate(new Date()),
+                        timestamp: new Date(),
+                    });
+                }
+
+                noteInput.value = "";
+                visibilityCheckbox.checked = true;
+                writeModal.classList.remove("show");
+
+                // After saving, load the notes based on the visibility condition
+                await loadNotes(showInvisible);
+            }
         });
-    }
-});
+
+        async function loadNotes(showInvisible = false) {
+            let notesQuery = query(
+                collection(db, "notes"),
+                orderBy("timestamp", "desc")
+            );
+
+            // If showInvisible is false, only load visible notes
+            if (!showInvisible) {
+                notesQuery = query(
+                    collection(db, "notes"),
+                    where("visibility", "==", "visible"), // Filter only visible notes
+                    orderBy("timestamp", "desc")
+                );
+            }
+
+            const querySnapshot = await getDocs(notesQuery);
+            notesList.innerHTML = "";
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const noteElement = document.createElement("div");
+                noteElement.classList.add("note");
+                noteElement.innerHTML = `
+                    <div class="note-header">
+                        <span class="edit-icon" data-id="${doc.id}">✏️</span>
+                        <span class="delete-icon" data-id="${doc.id}">🗑️</span>
+                    </div>
+                    <p style="font-weight: 500;">${data.content}</p>
+                    <p class="note-time" style="float: right;">${data.date}</p>
+                `;
+                notesList.appendChild(noteElement);
+            });
+
+            setupEditDeleteListeners();
+        }
+
+        function setupEditDeleteListeners() {
+            const editIcons = document.querySelectorAll(".edit-icon");
+            editIcons.forEach((icon) =>
+                icon.addEventListener("click", async (e) => {
+                    const docId = e.target.getAttribute("data-id");
+                    const docRef = doc(db, "notes", docId); // Get document reference
+                    const docSnap = await getDoc(docRef); // Correctly fetch document data
+                    if (docSnap.exists()) {
+                        const noteData = docSnap.data();
+                        noteInput.value = noteData.content;
+                        visibilityCheckbox.checked = noteData.visibility === "visible";
+                        editMode = true;
+                        editDocId = docId;
+                        writeModal.classList.add("show");
+                    } else {
+                        console.error("No such document!");
+                    }
+                })
+            );
+
+            const deleteIcons = document.querySelectorAll(".delete-icon");
+            deleteIcons.forEach((icon) =>
+                icon.addEventListener("click", async (e) => {
+                    const docId = e.target.getAttribute("data-id");
+                    await deleteDoc(doc(db, "notes", docId));
+                    await loadNotes();
+                })
+            );
+        }
+
+        notesList.addEventListener("click", (e) => {
+            const note = e.target.closest(".note");
+            if (note) {
+                const noteHeader = note.querySelector(".note-header");
+                noteHeader.style.display = noteHeader.style.display === "flex" ? "none" : "flex";
+            }
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!e.target.closest(".note")) {
+                document.querySelectorAll(".note-header").forEach((header) => {
+                    header.style.display = "none";
+                });
+            }
+        });
+
         function formatDate(date) {
             const day = date.getDate();
             const month = date.getMonth() + 1;
