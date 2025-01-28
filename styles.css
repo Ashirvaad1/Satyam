@@ -166,3 +166,62 @@ body
         padding: 1.5rem;
     }
 }
+
+.notes-list .note {
+    position: relative;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #f9f9f9;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden; /* Prevent content overflow */
+}
+
+.notes-list .note:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Top-right positioning for the note header (icons) */
+.note-header {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+    visibility: hidden; /* Initially hidden */
+}
+
+.notes-list .note:hover .note-header {
+    visibility: visible; /* Show on hover */
+}
+
+/* Styling for edit and delete icons */
+.edit-icon, .delete-icon {
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #6200ea;
+    background: white;
+    padding: 0.2rem;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.edit-icon:hover, .delete-icon:hover {
+    color: #3700b3;
+    transform: scale(1.1);
+}
+
+/* Styling for the time to stay aligned and within boundaries */
+.note-time {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0.5rem;
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Add ellipsis if overflowing */
+    float: right; /* Align the time to the right */
+    clear: both; /* Ensure proper layout */
+}
